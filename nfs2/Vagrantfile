@@ -1,0 +1,26 @@
+##nfs2
+Vagrant.configure("2") do |config|
+  config.ssh.insert_key = false
+  
+    config.vm.provider "virtualbox" do |vb|
+     vb.memory = "2048"
+     vb.cpus = 1
+	 vb.name = "nfs2"
+  
+  end
+  config.vm.define "nfs2" do |nfs2|
+        nfs2.vm.box = "centos/7"
+        nfs2.vm.network "private_network", ip: "192.168.56.4"
+        nfs2.vm.hostname = "nfs2"
+		nfs2.vm.provision "shell", inline: <<-SHELL
+		nfs2.vm.network :forwarded_port, guest: 22, host: 2222, host_ip: "0.0.0.0", id: "ssh", auto_correct: true
+		echo -e "192.168.56.3 nfs1 nfs1.example.com \n192.168.56.4 nfs2 nfs2.example.com \n192.168.56.5 nfsclient nfsclient.example.com\n" >> /etc/hosts
+		#echo -e "vagrant\nvagrant" | passwd Root@928
+		echo "PermitRootLogin yes" >> /etc/ssh/sshd_config
+		sed -in 's/PasswordAuthentication no/PasswordAuthentication yes/g' /etc/ssh/sshd_config
+		systemctl restart sshd
+		systemctl stop firewalld
+	SHELL
+  end
+
+end
